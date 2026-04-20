@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ Dlux | Official Site</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23020205'/><text y='75' x='18' font-family='sans-serif' font-weight='900' font-size='75' fill='%23eb5e28'>D</text></svg>">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.34/dist/lenis.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/split-type"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#050511', /* Deepest navy/black leaning into the image */
+                            ink: '#020205',
+                            accent: '#eb5e28', /* Rust/orange accent */
+                            concrete: '#252422'
+                        }
+                    },
+                    fontFamily: {
+                        display: ['Anton', 'sans-serif'], /* Massive brutalist headers */
+                        serif: ['Cormorant Garamond', 'serif'], /* Elegant editorial */
+                        mono: ['Space Mono', 'monospace'], /* Tech/Underground */
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root { cursor: none; }
+        body { 
+            background-color: #020205; 
+            color: #f4f4f5;
+            overflow-x: hidden;
+            overscroll-behavior: none;
+        }
+
+        /* Preloader */
+        .loader {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #020205;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        /* Custom Cursor */
+        .cursor {
+            width: 12px; height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: difference;
+            transition: width 0.3s, height 0.3s;
+        }
+        .cursor-follower {
+            width: 40px; height: 40px;
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: top 0.1s ease-out, left 0.1s ease-out, width 0.3s, height 0.3s, background 0.3s;
+        }
+        .hovering .cursor { width: 0; height: 0; }
+        .hovering .cursor-follower {
+            width: 90px; height: 90px;
+            background: #fff;
+            mix-blend-mode: difference;
+            border-color: #fff;
+        }
+
+        /* Editorial Image Masking */
+        .img-reveal-container { overflow: hidden; }
+        .img-reveal { transform: scale(1.2); transform-origin: center; }
+
+        /* Typography sizing */
+        .hero-title {
+            font-size: clamp(4rem, 18vw, 20rem);
+            line-height: 0.9;
+            text-transform: uppercase;
+        }
+        
+        .outline-text {
+            color: transparent;
+            -webkit-text-stroke: 1px rgba(255,255,255,0.3);
+        }
+
+        /* Horizontal Scroll Section */
+        .horizontal-scroller {
+            width: 400vw; /* 4 panels = 400vw */
+            height: 100vh;
+            display: flex;
+            flex-wrap: nowrap;
+        }
+        .h-panel {
+            width: 100vw;
+            height: 100vh;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Media Grid */
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1rem;
+        }
+        .media-item {
+            position: relative;
+            overflow: hidden;
+            filter: grayscale(100%);
+            transition: filter 0.5s ease;
+        }
+        .media-item:hover { filter: grayscale(0%); }
+        .media-item img, .media-item video {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 0.7s ease;
+        }
+        .media-item:hover img, .media-item:hover video { transform: scale(1.05); }
+        
+        /* Video play button overlay */
+        .play-indicator {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px; height: 60px;
+            border-radius: 50%; border: 1px solid white;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0.7; transition: opacity 0.3s, transform 0.3s;
+        }
+        .media-item:hover .play-indicator { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+
+        /* Form */
+        .btm-border-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            font-family: 'Space Mono', monospace;
+            padding: 1rem 0;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .btm-border-input:focus { border-color: #fff; }
+
+        /* Glitch / Grain */
+        .noise {
+            position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: 0.05;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+        
+        /* Split text lines */
+        .line { overflow: hidden; }
+    </style>
+</head>
+<body class="selection:bg-white selection:text-black">
+
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-follower" id="cursor-follower"></div>
+    <div class="noise"></div>
+
+    <!-- Preloader -->
+    <div class="loader" id="loader">
+        <div class="font-display text-6xl md:text-9xl text-white outline-text tracking-widest" id="loader-year">1986</div>
+        <div class="font-mono text-xs uppercase tracking-widest mt-4">Initializing Framework</div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-40 p-6 md:p-12 mix-blend-difference flex justify-between items-start pointer-events-none">
+        <div class="font-display text-2xl uppercase tracking-widest pointer-events-auto hoverable">
+            DJ DLUX<span class="text-brand-accent">.</span>
+        </div>
+        <div class="text-right pointer-events-auto">
+            <a href="#booking" class="font-mono text-xs uppercase tracking-widest hover:line-through hoverable block mb-2">Bookings</a>
+            <a href="#archive" class="font-mono text-xs uppercase tracking-widest hover:line-through hoverable block">The Archive</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="relative h-screen w-full flex items-center justify-center overflow-hidden">
+        
+        <!-- Massive Background Text -->
+        <div class="absolute w-full text-center z-0 top-[15%] md:top-[10%] px-4" data-speed="0.8">
+            <h1 class="hero-title font-display text-white mix-blend-exclusion relative z-20">
+                <span class="block translate-y-full opacity-0 hero-anim">THE</span>
+                <span class="block translate-y-full opacity-0 hero-anim">producer</span>
+            </h1>
+        </div>
+
+        <!-- Provided Editorial Image -->
+        <div class="absolute bottom-0 md:bottom-[-5%] z-10 w-[90%] md:w-[45%] h-[60vh] md:h-[80vh] img-reveal-container" data-speed="1.1">
+            <img src="Screenshot_1.png" alt="DJ Dlux" class="img-reveal w-full h-full object-cover object-top grayscale-[30%] contrast-125" id="hero-img">
+        </div>
+
+        <div class="absolute bottom-12 left-12 z-20 font-mono text-xs uppercase tracking-[0.3em] text-white/50 w-48 leading-relaxed">
+            I don't play one genre, <br>
+            <span class="text-white mt-2 block">I play the culture.</span>
+        </div>
+        
+        <div class="absolute bottom-12 right-12 z-20 hoverable text-xs vertical-text font-mono tracking-widest cursor-pointer">
+            <a href="#manifesto">SCROLL</a>
+        </div>
+    </section>
+
+    <!-- The Manifesto (Intro Text Reveal) -->
+    <section id="manifesto" class="py-32 md:py-48 px-6 md:px-12 max-w-7xl mx-auto flex items-center min-h-screen">
+        <h2 class="font-serif italic text-3xl md:text-6xl lg:text-7xl leading-tight md:leading-[1.1] text-zinc-400" id="intro-text">
+            Since 1986, DJ Dlux has been a pillar of British underground music. A true pioneer of the Pirate Radio movement, his career spans over four decades of cultural evolution. Dlux isn't just a witness to the history of the UK sound; <span class="text-white not-italic font-display uppercase tracking-wide">he is one of its primary architects</span>, helping to build the foundations of the scene from the ground up.
+        </h2>
+    </section>
+
+    <!-- The Framework (Horizontal Scroll GSAP) -->
+    <section class="horizontal-wrapper bg-brand-concrete relative overflow-hidden" id="framework">
+        <div class="absolute top-12 left-12 z-10 font-mono text-xs uppercase tracking-widest text-zinc-400 mix-blend-difference">
+            The Framework
+        </div>
+        
+        <div class="horizontal-scroller">
+            <!-- Panel 1 -->
+            <div class="h-panel w-screen h-screen">
+                <div class="flex flex-col md:flex-row gap-8 md:gap-24 items-center h-full max-w-7xl mx-auto w-full">
+                    <div class="flex-1">
+                        <div class="font-mono text-sm text-brand-accent mb-4">01</div>
+                        <h3 class="font-display text-5xl md:text-8xl uppercase leading-none mb-6 text-white">The<br>Foundation</h3>
+                        <p class="font-mono text-sm md:text-base text-zinc-400 mb-2">Jungle & Hardcore Pioneer</p>
+                    </div>
+                    <div class="flex-1 font-serif text-xl md:text-3xl text-zinc-300 leading-relaxed italic">
+                        "His influence is etched into the very DNA of the UK’s breakbeat culture. Joining Brain Records in 1991, he became a central figure in Hardcore and Jungle."
+                    </div>
+                </div>
+            </div>
+            <!-- Panel 2 -->
+            <div class="h-panel w-screen h-screen bg-brand-ink">
+                <div class="flex flex-col md:flex-row gap-8 md:gap-24 items-center h-full max-w-7xl mx-auto w-full">
+                    <div class="flex-1">
+                        <div class="font-mono text-sm text-brand-accent mb-4">02</div>
+                        <h3 class="font-display text-5xl md:text-8xl uppercase leading-none mb-6 text-white">The<br>Custodian</h3>
+                        <p class="font-mono text-sm md:text-base text-zinc-400 mb-2">Deja Vu FM</p>
+                    </div>
+                    <div class="flex-1 font-serif text-xl md:text-3xl text-zinc-300 leading-relaxed italic">
+                        "While his roots are in the booth, his leadership has been vital to the airwaves. As the Head of Deja Vu FM, he steered the station through decades of change."
+                    </div>
+                </div>
+            </div>
+            <!-- Panel 3 -->
+            <div class="h-panel w-screen h-screen">
+                <div class="flex flex-col md:flex-row gap-8 md:gap-24 items-center h-full max-w-7xl mx-auto w-full">
+                    <div class="flex-1">
+                        <div class="font-mono text-sm text-brand-accent mb-4">03</div>
+                        <h3 class="font-display text-5xl md:text-8xl uppercase leading-none mb-6 text-white">The<br>Engineer</h3>
+                        <p class="font-mono text-sm md:text-base text-zinc-400 mb-2">Mentorship & Production</p>
+                    </div>
+                    <div class="flex-1 font-serif text-xl md:text-3xl text-zinc-300 leading-relaxed italic">
+                        "A specialist in production and engineering, he has mentored artists including Kano, Lethal Bizzle, Big Narstie, Ruff Sqwad, and Frisco."
+                    </div>
+                </div>
+            </div>
+            <!-- Panel 4 -->
+            <div class="h-panel w-screen h-screen bg-brand-ink border-r-[20px] border-brand-accent">
+                <div class="flex flex-col md:flex-row gap-8 md:gap-24 items-center h-full max-w-7xl mx-auto w-full">
+                    <div class="flex-1">
+                        <div class="font-mono text-sm text-brand-accent mb-4">04</div>
+                        <h3 class="font-display text-5xl md:text-8xl uppercase leading-none mb-6 text-white">The<br>Mission</h3>
+                        <p class="font-mono text-sm md:text-base text-zinc-400 mb-2">Creative Engagement</p>
+                    </div>
+                    <div class="flex-1 font-serif text-xl md:text-3xl text-zinc-300 leading-relaxed italic">
+                        "Serving as a specialist coordinator in conflict mediation, he founded Creative Engagement Services in 2021 to empower the next generation."
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Archive (Gallery & Videos) -->
+    <section id="archive" class="py-32 px-4 md:px-12 bg-black min-h-screen">
+        <div class="max-w-7xl mx-auto">
+            <h2 class="font-display text-6xl md:text-9xl text-white outline-text mb-16 hoverable">THE ARCHIVE.</h2>
+            
+            <div class="media-grid">
+                <!-- Large Image -->
+                <div class="media-item col-span-12 md:col-span-8 h-[60vh] hoverable" data-cursor-text="VIEW">
+                    <img src="Screenshot_2.png" alt="DJ Set">
+                </div>
+                <!-- Small Info Block -->
+                <div class="col-span-12 md:col-span-4 h-[60vh] flex flex-col justify-end p-8 border border-white/10">
+                    <div class="font-mono text-sm text-brand-accent mb-4">LIVE SETS</div>
+                    <p class="font-serif text-xl text-zinc-400 italic">"The true power isn't in who you keep out, but in how many you let in."</p>
+                </div>
+
+                <!-- Video Placeholder 1 -->
+                <div class="media-item col-span-12 md:col-span-6 h-[40vh] mt-4 hoverable" data-cursor-text="PLAY">
+                    <img src="https://images.unsplash.com/photo-1598387993281-cecf8b71a8f8?auto=format&fit=crop&q=80&w=1200" alt="Studio">
+                    <div class="play-indicator">
+                        <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                    <div class="absolute bottom-4 left-4 font-mono text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">WE PLAY MUSIC - EP 01</div>
+                </div>
+                
+                <!-- Video Placeholder 2 -->
+                <div class="media-item col-span-12 md:col-span-6 h-[40vh] mt-4 hoverable" data-cursor-text="PLAY">
+                    <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1200" alt="Club">
+                    <div class="play-indicator">
+                        <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                    <div class="absolute bottom-4 left-4 font-mono text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">DEJA VU FM - SPECIAL</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Legacy Quote -->
+    <section class="py-48 px-6 md:px-12 flex items-center justify-center relative bg-brand-ink">
+        <h2 class="font-serif italic text-4xl md:text-7xl lg:text-8xl text-center max-w-6xl text-white leading-[1.1] relative z-10" id="quote-text">
+            "He didn't just open a door;<br>
+            <span class="font-display not-italic uppercase outline-text text-6xl md:text-9xl mt-8 block hoverable">He became the frame<br>that holds it open."</span>
+        </h2>
+    </section>
+
+    <!-- Booking Form -->
+    <section id="booking" class="py-32 px-6 md:px-12 min-h-screen flex items-center relative overflow-hidden bg-brand-concrete">
+        <!-- Abstract shape -->
+        <div class="absolute top-1/2 left-3/4 -translate-y-1/2 w-[800px] h-[800px] border border-white/5 rounded-full pointer-events-none"></div>
+        <div class="absolute top-1/2 left-3/4 -translate-y-1/2 w-[600px] h-[600px] border border-white/5 rounded-full pointer-events-none"></div>
+        
+        <div class="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-24 relative z-10">
+            <div>
+                <div class="font-mono text-sm text-brand-accent mb-4 tracking-widest uppercase">Connect</div>
+                <h2 class="font-display text-7xl md:text-9xl uppercase text-white leading-[0.9] mb-12">Enter<br>The<br>Frame.</h2>
+                <p class="font-serif italic text-2xl text-zinc-400 mb-8 max-w-md">
+                    For bookings, production inquiries, or Creative Engagement Services.
+                </p>
+                <div class="font-mono text-sm text-white/50 space-y-2">
+                    <p>E: management@djdlux.com</p>
+                    <p>L: London, UK</p>
+                </div>
+            </div>
+
+            <form class="flex flex-col gap-8 justify-center hoverable">
+                <div class="relative">
+                    <input type="text" id="name" class="btm-border-input w-full peer" placeholder=" " required>
+                    <label class="absolute left-0 top-4 font-mono text-xs text-white/40 transition-all peer-focus:-top-4 peer-focus:text-white peer-valid:-top-4 peer-valid:text-white">FULL NAME</label>
+                </div>
+                <div class="relative">
+                    <input type="email" id="email" class="btm-border-input w-full peer" placeholder=" " required>
+                    <label class="absolute left-0 top-4 font-mono text-xs text-white/40 transition-all peer-focus:-top-4 peer-focus:text-white peer-valid:-top-4 peer-valid:text-white">EMAIL ADDRESS</label>
+                </div>
+                <div class="relative">
+                    <select class="btm-border-input w-full font-mono text-sm text-white/70 bg-transparent appearance-none rounded-none">
+                        <option value="" disabled selected>SELECT INQUIRY TYPE</option>
+                        <option value="booking">DJ Booking</option>
+                        <option value="production">Production/Engineering</option>
+                        <option value="community">Creative Engagement</option>
+                    </select>
+                </div>
+                <div class="relative mt-8">
+                    <button type="button" class="font-display text-4xl uppercase text-white hover:text-brand-accent transition-colors flex items-center gap-4 group">
+                        Submit
+                        <span class="w-12 h-1 bg-white group-hover:bg-brand-accent transition-colors"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-black py-12 px-6 border-t border-white/10 text-center">
+        <h2 class="font-display text-6xl md:text-9xl text-white outline-text tracking-widest opacity-20">DJ DLUX</h2>
+        <div class="font-mono text-xs text-zinc-600 mt-8 uppercase">&copy; 2026 THE ARCHITECT. ALL RIGHTS RESERVED.</div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // 1. Lenis Smooth Scroll
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            touchMultiplier: 2
+        });
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // 2. Custom Cursor
+        const cursor = document.getElementById('cursor');
+        const follower = document.getElementById('cursor-follower');
+        const hoverables = document.querySelectorAll('.hoverable, a, button, input, select');
+
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            follower.style.left = e.clientX + 'px';
+            follower.style.top = e.clientY + 'px';
+        });
+
+        hoverables.forEach(el => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
+        // 3. GSAP Animations & Loading
+        gsap.registerPlugin(ScrollTrigger);
+
+        window.addEventListener('load', () => {
+            const tl = gsap.timeline();
+            
+            // Loader sequence
+            tl.to("#loader-year", {
+                duration: 1.5,
+                scrambleText: { text: "2026", chars: "0123456789", revealDelay: 0.5, tweenLength: false },
+                ease: "power2.out"
+            })
+            .to("#loader", { yPercent: -100, duration: 1, ease: "expo.inOut" }, "+=0.5")
+            
+            // Hero Reveal
+            .to(".hero-anim", { y: 0, opacity: 1, duration: 1, stagger: 0.1, ease: "power4.out" }, "-=0.2")
+            .fromTo(".img-reveal", { scale: 1.5, filter: "blur(10px)" }, { scale: 1, filter: "blur(0px)", duration: 2, ease: "power3.out" }, "-=1");
+
+            // SplitText Intro
+            const introSplit = new SplitType('#intro-text', { types: 'lines, words' });
+            gsap.from(introSplit.words, {
+                scrollTrigger: {
+                    trigger: "#intro-text",
+                    start: "top 80%",
+                },
+                y: 30,
+                opacity: 0,
+                duration: 0.8,
+                stagger: 0.02,
+                ease: "power3.out"
+            });
+
+            // Parallax Hero Elements
+            gsap.to(".hero-title", {
+                scrollTrigger: { trigger: ".hero-title", start: "top top", scrub: 1 },
+                y: -150
+            });
+            gsap.to(".img-reveal-container", {
+                scrollTrigger: { trigger: ".img-reveal-container", start: "top bottom", scrub: true },
+                y: 100
+            });
+
+            // Horizontal Scroll
+            const hScroller = document.querySelector(".horizontal-scroller");
+            const hPanels = gsap.utils.toArray(".h-panel");
+
+            gsap.to(hPanels, {
+                xPercent: -100 * (hPanels.length - 1),
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".horizontal-wrapper",
+                    pin: true,
+                    scrub: 1,
+                    snap: 1 / (hPanels.length - 1),
+                    end: () => "+=" + hScroller.offsetWidth
+                }
+            });
+
+            // Legacy Quote Reveal
+            const quoteSplit = new SplitType('#quote-text', { types: 'lines' });
+            gsap.from(quoteSplit.lines, {
+                scrollTrigger: {
+                    trigger: "#quote-text",
+                    start: "top 70%",
+                },
+                y: 50,
+                opacity: 0,
+                duration: 1,
+                stagger: 0.2,
+                ease: "power4.out"
+            });
+        });
+    </script>
+</body>
+</html>

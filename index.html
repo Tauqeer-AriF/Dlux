@@ -176,6 +176,16 @@
         
         /* Split text lines */
         .line { overflow: hidden; }
+
+        /* Progress Bar Glitch */
+        @keyframes progress-glitch {
+            0%, 100% { opacity: 1; transform: translateX(0) scaleY(1); }
+            20% { opacity: 0.8; transform: translateX(-1px) scaleY(1.3); }
+            40% { opacity: 1; transform: translateX(1px) scaleY(0.7); }
+            60% { opacity: 0.7; transform: translateX(-0.5px) scaleY(1.1); }
+            80% { opacity: 0.9; transform: translateX(0.5px) scaleY(0.9); }
+        }
+        .animate-progress-glitch { animation: progress-glitch 0.2s infinite; }
     </style>
 </head>
 <body class="selection:bg-white selection:text-black">
@@ -188,13 +198,16 @@
     <div class="loader" id="loader">
         <div class="font-display text-6xl md:text-9xl text-white outline-text tracking-widest" id="loader-year">1986</div>
         <div class="font-mono text-xs uppercase tracking-widest mt-4">Initializing Framework</div>
+        <div class="w-48 h-[1px] bg-white/10 mt-6 overflow-hidden relative">
+            <div id="loader-progress" class="absolute left-0 top-0 h-full bg-white w-0 animate-progress-glitch"></div>
+        </div>
     </div>
 
     <!-- Navigation -->
     <nav class="fixed top-0 w-full z-40 p-6 md:p-12 mix-blend-difference flex justify-between items-start pointer-events-none">
-        <div class="font-display text-2xl uppercase tracking-widest pointer-events-auto hoverable">
+        <a href="#" id="logo" class="font-display text-2xl uppercase tracking-widest pointer-events-auto hoverable block">
             DJ DLUX<span class="text-brand-accent">.</span>
-        </div>
+        </a>
         <div class="text-right pointer-events-auto">
             <a href="#booking" class="font-mono text-xs uppercase tracking-widest hover:line-through hoverable block mb-2">Bookings</a>
             <a href="#archive" class="font-mono text-xs uppercase tracking-widest hover:line-through hoverable block">The Archive</a>
@@ -393,10 +406,22 @@
         <div class="font-mono text-xs text-zinc-600 mt-8 uppercase">&copy; 2026 THE ARCHITECT. ALL RIGHTS RESERVED.</div>
     </footer>
 
+    <!-- Back to Top -->
+    <div id="back-to-top-container" class="fixed bottom-8 right-8 z-50 opacity-0 translate-x-12 pointer-events-none transition-all duration-500 flex items-center justify-center">
+        <svg class="w-14 h-14 transform -rotate-90">
+            <circle cx="28" cy="28" r="26" stroke="rgba(255,255,255,0.1)" stroke-width="2" fill="none" />
+            <circle id="progress-circle" cx="28" cy="28" r="26" stroke="#eb5e28" stroke-width="2" fill="none" 
+                stroke-dasharray="163.36" stroke-dashoffset="163.36" class="transition-all duration-75" />
+        </svg>
+        <button id="back-to-top" class="absolute w-10 h-10 bg-brand-accent text-white rounded-full flex items-center justify-center text-xs hover:bg-white hover:text-black transition-colors hoverable">
+            ↑
+        </button>
+    </div>
+
     <!-- Scripts -->
     <script>
         // 1. Lenis Smooth Scroll
-        const lenis = new Lenis({
+        window.lenis = new Lenis({
             duration: 1.2,
             easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             touchMultiplier: 2
@@ -431,11 +456,17 @@
             const tl = gsap.timeline();
             
             // Loader sequence
+            tl.to("#loader-progress", {
+                width: "100%",
+                duration: 1.5,
+                ease: "power1.inOut"
+            })
+
             tl.to("#loader-year", {
                 duration: 1.5,
                 scrambleText: { text: "2026", chars: "0123456789", revealDelay: 0.5, tweenLength: false },
                 ease: "power2.out"
-            })
+            }, 0) // Start at the same time as the progress bar
             .to("#loader", { yPercent: -100, duration: 1, ease: "expo.inOut" }, "+=0.5")
             
             // Hero Reveal
@@ -494,6 +525,38 @@
                 duration: 1,
                 stagger: 0.2,
                 ease: "power4.out"
+            });
+
+            // Back to Top Logic
+            const bttContainer = document.getElementById('back-to-top-container');
+            const progressCircle = document.getElementById('progress-circle');
+            const bttButton = document.getElementById('back-to-top');
+            const circumference = 2 * Math.PI * 26;
+            
+            window.addEventListener('scroll', () => {
+                // Visibility
+                if (window.scrollY > 1000) {
+                    bttContainer.classList.remove('opacity-0', 'translate-x-12', 'pointer-events-none');
+                    bttContainer.classList.add('opacity-100', 'translate-x-0', 'pointer-events-auto');
+                } else {
+                    bttContainer.classList.add('opacity-0', 'translate-x-12', 'pointer-events-none');
+                    bttContainer.classList.remove('opacity-100', 'translate-x-0', 'pointer-events-auto');
+                }
+
+                // Progress
+                const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+                progressCircle.style.strokeDashoffset = circumference - (scrollPercent / 100 * circumference);
+            });
+
+            bttButton.addEventListener('click', () => {
+                window.lenis.scrollTo(0);
+            });
+
+            // Logo Click to Top
+            const logo = document.getElementById('logo');
+            logo.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.lenis.scrollTo(0);
             });
         });
     </script>
